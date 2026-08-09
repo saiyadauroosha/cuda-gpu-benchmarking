@@ -1,0 +1,17 @@
+# Build outputs
+build/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+
+# Compiled artifacts
+*.exe
+*.obj
+*.o
+*.lib
+*.dll
+*.pdb
+
+# Large/generated benchmark data
+results/raw/
+results/tmp/
