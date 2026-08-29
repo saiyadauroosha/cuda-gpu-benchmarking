@@ -1,0 +1,23 @@
+CUDA Vector Addition Benchmark Results
+
+Repetitions per test: 10
+
+Vector Size: 100,000
+Average CPU Time: 0.126322 ms
+Average GPU Kernel Time: 0.123437 ms
+Average GPU End-to-End Time: 1.35809 ms
+
+Vector Size: 1,000,000
+Average CPU Time: 1.92214 ms
+Average GPU Kernel Time: 0.565603 ms
+Average GPU End-to-End Time: 7.32592 ms
+
+Vector Size: 5,000,000
+Average CPU Time: 7.53032 ms
+Average GPU Kernel Time: 1.92325 ms
+Average GPU End-to-End Time: 31.3628 ms
+
+Vector Size: 10,000,000
+Average CPU Time: 12.3349 ms
+Average GPU Kernel Time: 3.55347 ms
+Average GPU End-to-End Time: 44.3943 ms
