@@ -1,0 +1,19 @@
+Naive CUDA Matrix Multiplication Benchmark
+
+Repetitions per test: 10
+Threads per block: 16 x 16
+
+Matrix Size: 128 x 128
+Average CPU Time: 4.20419 ms
+Average GPU Kernel Time: 0.286003 ms
+Average GPU End-to-End Time: 1.22663 ms
+
+Matrix Size: 256 x 256
+Average CPU Time: 40.4832 ms
+Average GPU Kernel Time: 0.619165 ms
+Average GPU End-to-End Time: 1.45423 ms
+
+Matrix Size: 512 x 512
+Average CPU Time: 714.317 ms
+Average GPU Kernel Time: 5.15861 ms
+Average GPU End-to-End Time: 7.69924 ms

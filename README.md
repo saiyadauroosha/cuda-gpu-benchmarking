@@ -532,16 +532,190 @@ This milestone provided hands-on experience with:
 
 ---
 
+
+# Matrix Multiplication Benchmark
+
+## Overview
+
+The second workload compares CPU and CUDA implementations of square matrix multiplication.
+
+For two `N x N` matrices `A` and `B`, the result matrix `C` is computed using:
+
+```text
+C[row][col] =
+sum of A[row][k] * B[k][col]
+for k = 0 ... N-1
+```
+
+Unlike vector addition, matrix multiplication performs substantially more computation for each output element. This makes it a useful workload for studying when GPU parallelism can outweigh CPU-GPU memory-transfer overhead.
+
+---
+
+## CPU Implementation
+
+The CPU implementation uses three nested loops:
+
+```cpp
+for (int row = 0; row < N; row++) {
+    for (int col = 0; col < N; col++) {
+
+        int sum = 0;
+
+        for (int k = 0; k < N; k++) {
+            sum += A[row * N + k]
+                 * B[k * N + col];
+        }
+
+        C[row * N + col] = sum;
+    }
+}
+```
+
+The matrices are stored as one-dimensional vectors, so a matrix element at `(row, col)` is accessed using:
+
+```cpp
+row * N + col
+```
+
+---
+
+## Naive CUDA Implementation
+
+The current CUDA implementation assigns one output matrix element to each GPU thread.
+
+Each thread determines its row and column using:
+
+```cpp
+int row = blockIdx.y * blockDim.y + threadIdx.y;
+int col = blockIdx.x * blockDim.x + threadIdx.x;
+```
+
+The thread then computes one output element:
+
+```cpp
+C[row * N + col]
+```
+
+by multiplying one row of `A` with one column of `B`.
+
+The current implementation uses:
+
+```text
+16 x 16 threads per block
+```
+
+or 256 threads per block.
+
+This implementation is considered the **naive CUDA baseline** because each thread reads matrix values directly from global GPU memory.
+
+---
+
+## Matrix Multiplication Benchmark Methodology
+
+The benchmark evaluates three matrix sizes:
+
+```text
+128 x 128
+256 x 256
+512 x 512
+```
+
+Each CPU and GPU measurement is repeated 10 times, and the arithmetic mean is reported.
+
+The CPU measurement includes only CPU matrix-multiplication computation.
+
+The GPU benchmark reports two measurements:
+
+### GPU Kernel Time
+
+Measures only execution of the CUDA matrix-multiplication kernel using CUDA events.
+
+### GPU End-to-End Time
+
+Includes:
+
+```text
+CPU -> GPU copy of A
++
+CPU -> GPU copy of B
++
+CUDA kernel execution
++
+GPU -> CPU copy of C
+```
+
+GPU memory allocation is performed outside the repeated timed section.
+
+A CUDA warm-up kernel is executed before measured GPU runs to reduce first-launch initialization overhead.
+
+The benchmark is compiled using:
+
+```bash
+nvcc -O2 src/cuda/matrix_mul.cu -o matrix_mul
+```
+
+The matrix size can be supplied from the command line:
+
+```bash
+./matrix_mul 256
+```
+
+---
+
+## Matrix Multiplication Results
+
+Each value below is the average of 10 repetitions.
+
+| Matrix Size | Average CPU Time | Average GPU Kernel Time | Average GPU End-to-End Time |
+|---:|---:|---:|---:|
+| 128 x 128 | 4.20419 ms | 0.286003 ms | 1.22663 ms |
+| 256 x 256 | 40.4832 ms | 0.619165 ms | 1.45423 ms |
+| 512 x 512 | 714.317 ms | 5.15861 ms | 7.69924 ms |
+
+Raw measurements are stored in:
+
+```text
+results/matrix_mul_results.txt
+```
+
+---
+
+## Matrix Multiplication Observations
+
+The matrix-multiplication benchmark behaves very differently from vector addition.
+
+With vector addition, the CUDA kernel was faster than the CPU computation, but CPU-GPU memory-transfer overhead caused the end-to-end GPU execution to be slower.
+
+For matrix multiplication, the GPU remains substantially faster even after including memory transfers.
+
+For example, at `512 x 512`:
+
+```text
+CPU:                 714.317 ms
+GPU kernel:            5.15861 ms
+GPU end-to-end:        7.69924 ms
+```
+
+Matrix multiplication performs much more computation for each output element than vector addition. This gives the GPU enough parallel work to offset the cost of moving the matrices between CPU and GPU memory.
+
+This demonstrates an important GPU-performance principle:
+
+> GPU acceleration is particularly effective when a workload provides enough parallel computation relative to its data-transfer cost.
+
+The current CUDA kernel is still a baseline implementation. It repeatedly reads matrix elements from global GPU memory. A future milestone will use shared-memory tiling to reduce redundant global-memory accesses.
+
+---
+
 # Future Work
 
-Planned improvements include:
+Planned next steps include:
 
+- Implement tiled matrix multiplication using CUDA shared memory.
+- Compare naive CUDA matrix multiplication with the tiled implementation.
+- Study the effect of shared-memory reuse on kernel performance.
 - Add complete CPU/GPU result validation.
-- Add CUDA API and kernel error checking.
-- Automate benchmarks across multiple workload sizes.
-- Export benchmark results in CSV format.
-- Generate performance plots from benchmark results.
-- Add more computationally intensive workloads.
-- Compare workloads with different arithmetic intensity.
-- Explore CUDA optimization techniques after establishing correct baseline implementations.
-- Expand the project beyond vector addition to demonstrate cases where GPU parallelism can better offset memory-transfer costs.
+- Add CUDA error checking.
+- Automate benchmark execution across workload sizes.
+- Export benchmark data to CSV.
+- Generate CPU-versus-GPU performance plots.
+
